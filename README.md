@@ -9,4 +9,6 @@ Files included:
 
 Most of the explanation and documentation is already included in the shiny app codes themselves and should be self-explanatory.
 
+Deployed app can be found on: http://kevinlxk.shinyapps.io/heightpredict
+
 Developed by Kevin Low, 2014.
