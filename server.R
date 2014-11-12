@@ -10,17 +10,14 @@ pcheck <- function(pheight) {
         # This function checks which parent height are used and alters the state variable
         if (length(pheight) == 1) {
                 if (pheight == "father"){
-                        pstate <<- 1
                         return("Father")
                 } else {
-                        pstate <<- 2
                         return("Mother")
                 }
         } else if (length(pheight) == 2) {
-                pstate <<- 3
                 return("Both Parents")
         } else {
-                return("Please input predicting variables and hit 'Submit'")
+                return("Please input predicting variables")
         }
 }
 
@@ -29,13 +26,15 @@ heights <- function(pheight, fheight, mheight) {
                 return(fheight)
         } else if (length(pheight) == 1 & pheight[1] == "mother") {
                 return(mheight)
-        } else {
+        } else if (length(pheight) == 2) {
                 both <- c(fheight,mheight)
                 return(both)
+        } else {
+                return("Please input predicting variables")
         }
 }
 
-modsel <- function(pheight, fheight, mheight, cgender) {
+modsel <- function(pheight = 1, fheight, mheight, cgender) {
         cheight <- 65
         fmod <- function(fheight,cgender) {
                 a <- 35.6791
@@ -65,23 +64,31 @@ modsel <- function(pheight, fheight, mheight, cgender) {
         } else {
                 bmod(fheight,mheight,cgender)
         }
-        cheight
+        round(cheight, digits = 3)
 }
-
 
 library(shiny)
 
 shinyServer(function(input, output) {
         
         # We want to be able to print the user's inputs first to confirm
-        output$parents <- renderPrint({pcheck(input$pheight)})
-        output$heights <- renderPrint({heights(input$pheight, input$fheight,input$mheight)})
-        output$gender <- renderPrint({input$cgender})
+        output$parents <- renderText({paste("You have selected to predict child\'s height with that of:", pcheck(input$pheight))})
+        output$heights <- renderText({paste("You have entered parent(s) height(s) of:", paste(heights(input$pheight, input$fheight, input$mheight), collapse = " and "))})
+        output$gender <- renderText({paste("Your selected child gender is", input$cgender, collapse = " ")})
         
         # We then want to generate outputs based on the models used
-        output$cheight <- renderPrint({modsel(input$pheight, input$fheight, input$mheight, input$cgender)})
+        output$cheight <- renderText({paste("Your child's predicted height is", modsel(input$pheight, input$fheight*as.numeric(input$units), input$mheight*as.numeric(input$units), input$cgender), 
+                                            "inches or",
+                                            2.54*modsel(input$pheight, input$fheight*as.numeric(input$units), input$mheight*as.numeric(input$units), input$cgender), "cm", collapse = "")})
+        
         output$hplot <- renderPlot({
-                hist(GaltonFamilies$childHeight, xlab = "Child's Heights", col = "lightblue", main = "Height Distribution", breaks = 20)
+                dat <- subset(GaltonFamilies, gender == input$cgender, select = childHeight)
+                hist(dat$childHeight, xlab = "Child's Heights (in inches)", ylab = "Counts", col = "lightblue", main = "Height Distribution (same gender)", breaks = 20)
+                cheight <- modsel(input$pheight, input$fheight, input$mheight, input$cgender)
+                lines(x = c(cheight, cheight), y = c(0,150), col = "red", lwd = 5)
+        })
+        output$hplot2 <- renderPlot({
+                hist(GaltonFamilies$childHeight, xlab = "Child's Heights (in inches)", ylab = "Counts", col = "lightblue", main = "Height Distribution (both gender)", breaks = 20)
                 cheight <- modsel(input$pheight, input$fheight, input$mheight, input$cgender)
                 lines(x = c(cheight, cheight), y = c(0,150), col = "red", lwd = 5)
         })
